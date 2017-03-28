@@ -6,6 +6,9 @@ import com.google.common.io.CharSource;
 import com.google.common.io.Files;
 import com.google.googlejavaformat.java.Formatter;
 import com.google.googlejavaformat.java.FormatterException;
+import com.google.googlejavaformat.java.ImportOrderer;
+import com.google.googlejavaformat.java.RemoveUnusedImports;
+import com.google.googlejavaformat.java.RemoveUnusedImports.JavadocOnlyImports;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -60,6 +63,12 @@ public class FMT extends AbstractMojo {
 
   @Parameter(defaultValue = "false", property = "validateOnly")
   private boolean validateOnly;
+
+  @Parameter(defaultValue = "false", property = "reorderImports")
+  private boolean reorderImports;
+
+  @Parameter(defaultValue = "false", property = "removeUnusedImports")
+  private boolean removeUnusedImports;
 
   private List<String> filesFormatted = new ArrayList<String>();
   private int nonComplyingFiles;
@@ -150,6 +159,12 @@ public class FMT extends AbstractMojo {
     try {
       String input = source.read();
       String output = formatter.formatSource(input);
+      if (removeUnusedImports) {
+        output = RemoveUnusedImports.removeUnusedImports(output, JavadocOnlyImports.KEEP);
+      }
+      if (reorderImports) {
+        output = ImportOrderer.reorderImports(output);
+      }
       if (!input.equals(output)) {
         if (!validateOnly) {
           sink.write(output);
